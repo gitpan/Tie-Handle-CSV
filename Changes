@@ -1,5 +1,10 @@
 Revision history for Perl extension Tie::Handle::CSV.
 
+0.04  Thu Mar 25 2004
+     - croak if open fails during instantiation
+     - allow a 'sep_char' option as a short-cut to creating a Text::CSV_XS
+       object with a given separator
+
 0.03  Thu Mar 15 2004
      - changed default behavior to assume file has a header row
      - clarified docs regarding headers and arrays vs hashes

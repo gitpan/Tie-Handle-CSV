@@ -11,9 +11,9 @@ use File::Temp 'tempfile';
 my ($tmp_fh, $tmp_file) = tempfile( UNLINK => 1 );
 
 print $tmp_fh <<EOCSV;
-foo,bar,baz
-potato,monkey,rutabaga
-fred,barney,wilma
+foo:bar:baz
+potato:monkey:rutabaga
+fred:barney:wilma
 EOCSV
 
 close $tmp_fh;
@@ -29,13 +29,13 @@ use_ok('Tie::Handle::CSV');
 
 eval { tie(*FH, 'Tie::Handle::CSV', '', header => 1) };
 ok( $@, 'tie - bad - header' );
-ok(  tie(*FH, 'Tie::Handle::CSV', $tmp_file, header => 1), 'tie - good - header' );
+ok(  tie(*FH, 'Tie::Handle::CSV', $tmp_file, header => 1, sep_char => ':'), 'tie - good - header' );
 
 ## test new() interface
 
 my $csv_fh;
 
-ok(  $csv_fh = Tie::Handle::CSV->new($tmp_file, header => 1), 'new - good - header' );
+ok(  $csv_fh = Tie::Handle::CSV->new($tmp_file, header => 1, sep_char => ':'), 'new - good - header' );
 eval { Tie::Handle::CSV->new('', header => 1) };
 ok( $@, 'new - bad - header' );
 
@@ -47,8 +47,8 @@ my $line3 = <FH>;
 
 ok( ref $line1 eq 'Tie::Handle::CSV::HASH',              'tie - ref' );
 
-ok( $line1 eq 'potato,monkey,rutabaga', 'tie - line1 - stringify' );
-ok( $line2 eq 'fred,barney,wilma',      'tie - line2 - stringify' );
+ok( $line1 eq 'potato:monkey:rutabaga', 'tie - line1 - stringify' );
+ok( $line2 eq 'fred:barney:wilma',      'tie - line2 - stringify' );
 ok(! defined $line3,                    'tie - line3 - undef' );
 
 is( $line1->{'foo'}, 'potato',   'tie - line1 - foo' );
@@ -67,8 +67,8 @@ $line3 = <$csv_fh>;
 
 ok( ref $line1 eq 'Tie::Handle::CSV::HASH',              'new - ref' );
 
-ok( $line1 eq 'potato,monkey,rutabaga', 'new - line1 - stringify' );
-ok( $line2 eq 'fred,barney,wilma',      'new - line2 - stringify' );
+ok( $line1 eq 'potato:monkey:rutabaga', 'new - line1 - stringify' );
+ok( $line2 eq 'fred:barney:wilma',      'new - line2 - stringify' );
 ok(! defined $line3,                    'new - line3 - undef' );
 
 is( $line1->{'foo'}, 'potato',   'new - line1 - foo' );

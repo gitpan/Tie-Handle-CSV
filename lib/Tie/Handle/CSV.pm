@@ -11,7 +11,7 @@ use Symbol;
 use Tie::Handle::CSV::Hash;
 use Tie::Handle::CSV::Array;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 sub new
    {
@@ -42,17 +42,28 @@ sub TIEHANDLE
    ## otherwise use 2-arg to work with STDIN via '-'
    if ( defined $opts{'openmode'} )
       {
-      open( $csv_fh, $opts{'openmode'}, $opts{'file'} ) || return;
+      open( $csv_fh, $opts{'openmode'}, $opts{'file'} )
+         || croak "$!: $opts{'file'}";
       }
    else
       {
-      open( $csv_fh, $opts{'file'} ) || return;
+      open( $csv_fh, $opts{'file'} )
+         || croak "$!: $opts{'file'}";
       }
 
    ## establish the csv object
+   ## use given sep_char when possible
    if ( ref $opts{'csv_parser'} ne 'Text::CSV_XS' )
       {
-      $opts{'csv_parser'} = Text::CSV_XS->new();
+      if (defined $opts{'sep_char'})
+         {
+         $opts{'csv_parser'} =
+            Text::CSV_XS->new( { sep_char => $opts{'sep_char'} } );
+         }
+      else
+         {
+         $opts{'csv_parser'} = Text::CSV_XS->new();
+         }
       }
 
    $opts{'header'} = 1 unless exists $opts{'header'};
@@ -312,9 +323,22 @@ other behaviors are desired, you can create your own instance and pass it as
 the value to this option.
 
    ## use colon separators
-   my $csv_parser = Text::CSV_XS->new( sep_char => ':' );
+   my $csv_parser = Text::CSV_XS->new( { sep_char => ':' } );
    my $csv_fh = Tie::Handle::CSV->new( 'basic.csv',
                                         csv_parser => $csv_parser );
+
+=head2 C<sep_char>
+
+Perhaps the most common reason for giving the C<csv_parser> option is to
+specify a non-comma separator character. For this reason, you can specify a
+separator character using the C<sep_char> option. This is passed directly to
+the internally created L<Text::CSV_XS> object.
+
+   ## use colon separators
+   my $csv_fh = Tie::Handle::CSV->new( 'basic.csv', sep_char => ':' );
+
+If you specify both the C<sep_char> and C<csv_parser> options, the C<sep_char>
+option is ignored.
 
 =head1 AUTHOR
 

@@ -8,6 +8,7 @@ t/header_in_args.t
 t/slurp.t
 t/seek.t
 t/tell.t
+t/sep_char.t
 lib/Tie/Handle/CSV.pm
 lib/Tie/Handle/CSV/Array.pm
 lib/Tie/Handle/CSV/Hash.pm

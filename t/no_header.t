@@ -29,15 +29,17 @@ use_ok('Tie::Handle::CSV');
 
 ## test tie interface
 
-ok(! tie(*FH, 'Tie::Handle::CSV', ''),        'tie - bad  - no header' );
-ok(  tie(*FH, 'Tie::Handle::CSV', $tmp_file, header => 0), 'tie - good - no header' );
+eval { tie(*FH, 'Tie::Handle::CSV', '') };
+ok( $@,        'tie - bad  - no header' );
+ok( tie(*FH, 'Tie::Handle::CSV', $tmp_file, header => 0), 'tie - good - no header' );
 
 ## test new() interface
 
 my $csv_fh;
 
-ok(! Tie::Handle::CSV->new(''),                  'new - bad  - no header' );
-ok(  $csv_fh = Tie::Handle::CSV->new($tmp_file, header => 0), 'new - good - no header' );
+eval { Tie::Handle::CSV->new('') };
+ok( $@,                  'new - bad  - no header' );
+ok( $csv_fh = Tie::Handle::CSV->new($tmp_file, header => 0), 'new - good - no header' );
 
 ## test reading with no header
 
