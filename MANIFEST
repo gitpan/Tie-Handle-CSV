@@ -1,0 +1,14 @@
+Changes
+Makefile.PL
+MANIFEST
+README
+t/no_header.t
+t/header_in_file.t
+t/header_in_args.t
+t/slurp.t
+t/seek.t
+t/tell.t
+lib/Tie/Handle/CSV.pm
+lib/Tie/Handle/CSV/Array.pm
+lib/Tie/Handle/CSV/Hash.pm
+META.yml                                 Module meta-data (added by MakeMaker)

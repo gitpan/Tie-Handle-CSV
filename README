@@ -1,0 +1,48 @@
+Tie-Handle-CSV
+==============
+
+Makes basic access to CSV files easier. When you read from the file handle, a
+hash or an array is returned depending on whether headers exist or do not.
+
+Regardless of the type of the returned data, when it is converted to a string,
+it automatically converts back to CSV format.
+
+   use strict;
+   use warnings;
+
+   use Tie::Handle::CSV;
+
+   my $csv_fh = Tie::Handle::CSV->new('basic.csv', header => 1);
+
+   while (my $csv_line = <$csv_fh>)
+      {
+      $csv_line->{'salary'} *= 1.05;    ## give a 5% raise
+      print $csv_line, "\n";            ## print modified CSV line to STDOUT
+      }
+
+   close $csv_fh;
+
+INSTALLATION
+
+To install this module type the following:
+
+   perl Makefile.PL
+   make
+   make test
+   make install
+
+DEPENDENCIES
+
+This module requires these other modules and libraries:
+
+   Test::More
+
+COPYRIGHT AND LICENCE
+
+Copyright (C) 2004 Daniel B. Boorstein
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself, either Perl version 5.8.2 or,
+at your option, any later version of Perl 5 you may have available.
+
+
