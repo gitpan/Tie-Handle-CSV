@@ -11,7 +11,7 @@ use Symbol;
 use Tie::Handle::CSV::Hash;
 use Tie::Handle::CSV::Array;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 sub new
    {
@@ -91,23 +91,9 @@ sub READLINE
 
       my @parsed_lines;
 
-      while (my $csv_line = readline($self->{'handle'}))
+      while (my $parsed_line = $self->READLINE)
          {
-         $opts->{'csv_parser'}->parse($csv_line)
-            || croak $opts->{'csv_parser'}->error_input();
-         if ( $opts->{'header'} )
-            {
-            my $parsed_line = Tie::Handle::CSV::HASH->_new($self);
-            @{ $parsed_line }{ @{ $opts->{'header'} } }
-               = $opts->{'csv_parser'}->fields();
-            push @parsed_lines, $parsed_line;
-            }
-         else
-            {
-            my $parsed_line = Tie::Handle::CSV::ARRAY->_new($self);
-            @{ $parsed_line } = $opts->{'csv_parser'}->fields();
-            push @parsed_lines, $parsed_line;
-            }
+         push @parsed_lines, $parsed_line;
          }
 
       return @parsed_lines;
@@ -181,8 +167,6 @@ Tie::Handle::CSV - easy access to CSV files
 
    my $csv_fh = Tie::Handle::CSV->new('basic.csv', header => 1);
 
-   $csv_fh || die $!;
-
    while (my $csv_line = <$csv_fh>)
       {
       $csv_line->{'salary'} *= 1.05;  ## give a 5% raise
@@ -214,12 +198,15 @@ or by constructing one with the C<new()> method.
 
    my $csv_fh = Tie::Handle::CSV->new('basic.csv', header => 1);
 
-If either C<tie> or C<new> return a false value, then C<open> failed, and you
-can check C<$!> as usual.
+If either C<tie> or C<new> fail to C<open> the given file, they call
+C<Carp::croak> with the value "$!: $file". If you don't wish your program to
+fail when a file can't be opened, wrap your instantiation in an C<eval>.
 
-   $csv_fh || die $!;
+   eval { tie *CSV_FH, 'Tie::Handle::CSV', 'basic.csv', header => 1 };
+   my $csv_fh = eval { Tie::Handle::CSV->new('basic.csv', header => 1) };
 
-You can read from this file handle as you normally would.
+Once you have successfully tied/instantiated a file, you can read from it as
+you normally would.
 
    my $first_line = <$csv_fh>;
 
