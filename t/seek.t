@@ -26,7 +26,7 @@ use_ok('Tie::Handle::CSV');
 
 my $csv_fh;
 
-ok( $csv_fh = Tie::Handle::CSV->new($tmp_file), 'new - good - no header' );
+ok( $csv_fh = Tie::Handle::CSV->new($tmp_file, header => 0), 'new - good - no header' );
 
 ok( seek($csv_fh, 0, SEEK_END), 'seek 0, SEEK_END');
 

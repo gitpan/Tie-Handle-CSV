@@ -25,7 +25,7 @@ use_ok('Tie::Handle::CSV');
 
 my $csv_fh;
 
-ok(  $csv_fh = Tie::Handle::CSV->new($tmp_file), 'new - good - no header' );
+ok(  $csv_fh = Tie::Handle::CSV->new($tmp_file, header => 0), 'new - good - no header' );
 
 ## test reading with no header
 

@@ -11,7 +11,7 @@ use Symbol;
 use Tie::Handle::CSV::Hash;
 use Tie::Handle::CSV::Array;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 sub new
    {
@@ -55,7 +55,8 @@ sub TIEHANDLE
       $opts{'csv_parser'} = Text::CSV_XS->new();
       }
 
-   ## if the 'header' option is given, read the header
+   $opts{'header'} = 1 unless exists $opts{'header'};
+
    if ( $opts{'header'} && ref $opts{'header'} ne 'ARRAY' )
       {
       my $header_line = <$csv_fh>;
@@ -222,13 +223,13 @@ usage as a string, converts it back to CSV format.
 
    print $first_line, "\n";           ## prints "steve,21000,picker\n"
 
-In the example above, the file has a header. If it did not, 2 options would
-exist.  The header information could be passed in as an argument to C<tie> or
-C<new> (see OPTIONS), or the file could be read with no header information.
+In the example above, the file has a header, allowing the lines to be treated
+as hash references. If it did not have a built in header, the lines could still
+be treated as hash references, by passing a list of header names as an argument
+to C<tie> or C<new> (see OPTIONS).
 
-This last option means that when your CSV file has no header information (in
-the file or passed in as an option), then lines are returned as array
-references and can be accessed by numerical index.
+If the file did not have a built in header, and no header was passed as an
+argument to C<tie> or C<new>, then lines are treated as array references.
 
    $first_line->[1] *= 1.05;          ## cost of living increase
 
@@ -268,20 +269,20 @@ precedence over this option.
 =head2 C<header>
 
 This option indicates whether and how headers are to be used. If this option is
-true, lines will be represented as hash references. If it is false, lines will
-be represented as array references.
+true or non-existent, lines will be represented as hash references. If it is
+false, lines will be represented as array references.
 
    ## no header
    my $csv_fh = Tie::Handle::CSV->new( 'basic.csv', header => 0 );
    ## print first field of first line
    print +( scalar <$csv_fh> )->[0], "\n";
 
-If this option is true, and not an array reference the first line of the file
-is read at the time of calling C<tie> or C<new> and used to define the hash
-reference keys.
+If this option is true or non-existent, and not an array reference the first
+line of the file is read at the time of calling C<tie> or C<new> and used to
+define the hash reference keys.
 
    ## header in file
-   my $csv_fh = Tie::Handle::CSV->new( 'basic.csv', header => 1 );
+   my $csv_fh = Tie::Handle::CSV->new( 'basic.csv' );
    ## print first field of first line
    print +( scalar <$csv_fh> )->{'name'}, "\n";
 
