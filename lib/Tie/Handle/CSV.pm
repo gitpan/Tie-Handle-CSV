@@ -11,7 +11,7 @@ use Symbol;
 use Tie::Handle::CSV::Hash;
 use Tie::Handle::CSV::Array;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 sub new
    {
@@ -224,7 +224,7 @@ usage as a string, converts it back to CSV format.
 
 In the example above, the file has a header. If it did not, 2 options would
 exist.  The header information could be passed in as an argument to C<tie> or
-C<new> (see OPTIONS), the file could be read with no header information.
+C<new> (see OPTIONS), or the file could be read with no header information.
 
 This last option means that when your CSV file has no header information (in
 the file or passed in as an option), then lines are returned as array
@@ -277,7 +277,7 @@ be represented as array references.
    print +( scalar <$csv_fh> )->[0], "\n";
 
 If this option is true, and not an array reference the first line of the file
-is read at the time of calling C<tie> or C<new> and used to defined the hash
+is read at the time of calling C<tie> or C<new> and used to define the hash
 reference keys.
 
    ## header in file
@@ -321,7 +321,7 @@ Daniel B. Boorstein, E<lt>danboo@cpan.orgE<gt>
 
 =head1 SEE ALSO
 
-Text::CSV_XS
+L<Text::CSV_XS>
 
 =head1 COPYRIGHT AND LICENSE
 
