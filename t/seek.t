@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use Test::More 'no_plan';
+use Test::More tests => 7;
 use File::Temp 'tempfile';
 use Fcntl ':seek';
 
@@ -37,4 +37,3 @@ ok( seek($csv_fh, 0, SEEK_SET), 'seek 0, SEEK_SET');
 is( ( scalar <$csv_fh> )->[0], 'foo', 'readline - bar');
 
 ok( close($csv_fh), 'new - close' );
-

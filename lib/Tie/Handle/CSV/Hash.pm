@@ -1,4 +1,4 @@
-package Tie::Handle::CSV::HASH;
+package Tie::Handle::CSV::Hash;
 
 use 5.006;
 use strict;
@@ -75,3 +75,11 @@ sub _stringify
    }
 
 1;
+
+__END__
+
+=head1 NAME
+
+Tie::Handle::CSV::Hash - Support class for L<Tie::Handle::CSV>
+
+=cut

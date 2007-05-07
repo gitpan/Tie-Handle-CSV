@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use Test::More 'no_plan';
+use Test::More tests => 5;
 use File::Temp 'tempfile';
 
 ## create a temp CSV file
@@ -34,4 +34,3 @@ scalar <$csv_fh>;
 ok( tell $csv_fh > 0, 'tell > 0' );
 
 ok( close($csv_fh), 'new - close' );
-

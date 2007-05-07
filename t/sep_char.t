@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use Test::More 'no_plan';
+use Test::More tests => 31;
 use File::Temp 'tempfile';
 
 
@@ -45,7 +45,7 @@ my $line1 = <FH>;
 my $line2 = <FH>;
 my $line3 = <FH>;
 
-ok( ref $line1 eq 'Tie::Handle::CSV::HASH',              'tie - ref' );
+ok( ref $line1 eq 'Tie::Handle::CSV::Hash',              'tie - ref' );
 
 ok( $line1 eq 'potato:monkey:rutabaga', 'tie - line1 - stringify' );
 ok( $line2 eq 'fred:barney:wilma',      'tie - line2 - stringify' );
@@ -65,7 +65,7 @@ $line1 = <$csv_fh>;
 $line2 = <$csv_fh>;
 $line3 = <$csv_fh>;
 
-ok( ref $line1 eq 'Tie::Handle::CSV::HASH',              'new - ref' );
+ok( ref $line1 eq 'Tie::Handle::CSV::Hash',              'new - ref' );
 
 ok( $line1 eq 'potato:monkey:rutabaga', 'new - line1 - stringify' );
 ok( $line2 eq 'fred:barney:wilma',      'new - line2 - stringify' );
@@ -83,4 +83,3 @@ is( $line2->{'not'}, undef,      'new - line2 - not' );
 
 ok( close(FH),      'tie - close' );
 ok( close($csv_fh), 'new - close' );
-

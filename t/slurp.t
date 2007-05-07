@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use Test::More 'no_plan';
+use Test::More tests => 21;
 use File::Temp 'tempfile';
 
 ## create a temp CSV file
@@ -31,7 +31,7 @@ ok(  $csv_fh = Tie::Handle::CSV->new($tmp_file, header => 0), 'new - good - no h
 
 my @lines = <$csv_fh>;
 
-is( ref $lines[0], 'Tie::Handle::CSV::ARRAY', 'tie - ref' );
+is( ref $lines[0], 'Tie::Handle::CSV::Array', 'tie - ref' );
 is( scalar @lines, 3, 'tie - line count' );
 
 is( $lines[0], 'foo,bar,baz',            'tie - lines[0] - stringify' );
@@ -55,4 +55,3 @@ is( $lines[2]->[2], 'wilma',  'tie - lines[2] - 2' );
 is( $lines[2]->[3], undef,    'tie - lines[2] - 3' );
 
 ok( close($csv_fh), 'new - close' );
-

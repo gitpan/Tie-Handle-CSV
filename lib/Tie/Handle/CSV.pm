@@ -11,12 +11,12 @@ use Symbol;
 use Tie::Handle::CSV::Hash;
 use Tie::Handle::CSV::Array;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 sub new
    {
    my $self = gensym();
-   return tie(*$self, shift @_, @_) ? $self : ();
+   return tie(*{ $self }, shift @_, @_) ? $self : ();
    }
 
 sub TIEHANDLE
@@ -47,8 +47,7 @@ sub TIEHANDLE
       }
    else
       {
-      open( $csv_fh, $opts{'file'} )
-         || croak "$!: $opts{'file'}";
+      open( $csv_fh, $opts{'file'} ) || croak "$!: $opts{'file'}";
       }
 
    ## establish the csv object
@@ -65,6 +64,8 @@ sub TIEHANDLE
          $opts{'csv_parser'} = Text::CSV_XS->new();
          }
       }
+
+   $opts{'stringify'} = 1 unless exists $opts{'stringify'};
 
    $opts{'header'} = 1 unless exists $opts{'header'};
 
@@ -108,14 +109,16 @@ sub READLINE
             || croak $opts->{'csv_parser'}->error_input();
          if ( $opts->{'header'} )
             {
-            my $parsed_line = Tie::Handle::CSV::HASH->_new($self);
+            my $parsed_line = $opts->{'stringify'}
+               ? Tie::Handle::CSV::Hash->_new($self) : {};
             @{ $parsed_line }{ @{ $opts->{'header'} } }
                = $opts->{'csv_parser'}->fields();
             return $parsed_line;
             }
          else
             {
-            my $parsed_line = Tie::Handle::CSV::ARRAY->_new($self);
+            my $parsed_line = $opts->{'stringify'}
+               ? Tie::Handle::CSV::Array->_new($self) : [];
             @{ $parsed_line } = $opts->{'csv_parser'}->fields();
             return $parsed_line;
             }
@@ -130,33 +133,39 @@ sub READLINE
 sub CLOSE
    {
    my ($self) = @_;
-   close $self->{'handle'};
+   return close $self->{'handle'};
    }
 
 sub PRINT
    {
    my ($self, @list) = @_;
    my $handle = $self->{'handle'};
-   print $handle @list;
+   return print $handle @list;
    }
 
 sub SEEK
    {
    my ($self, $position, $whence) = @_;
-   seek $self->{'handle'}, $position, $whence;
+   return seek $self->{'handle'}, $position, $whence;
    }
 
 sub TELL
    {
    my ($self) = @_;
-   tell $self->{'handle'};
+   return tell $self->{'handle'};
    }
 
 1;
+
 __END__
+
 =head1 NAME
 
 Tie::Handle::CSV - easy access to CSV files
+
+=head1 VERSION
+
+Version 0.06
 
 =head1 SYNOPSIS
 
@@ -170,139 +179,87 @@ Tie::Handle::CSV - easy access to CSV files
    while (my $csv_line = <$csv_fh>)
       {
       $csv_line->{'salary'} *= 1.05;  ## give a 5% raise
-      print $csv_line, "\n";          ## print new CSV line to STDOUT
+      print $csv_line, "\n";          ## auto-stringify to CSV line on STDOUT
       }
 
    close $csv_fh;
 
 =head1 DESCRIPTION
 
-C<Tie::Handle::CSV> makes basic access to CSV files easier. When you read from
-the file handle, a hash reference or an array reference is returned depending
-on whether headers exist or do not.
+C<Tie::Handle::CSV> makes basic access to CSV files easier.
 
-Regardless of the type of the returned data, when it is converted to a string,
-it automatically converts back to CSV format.
+=head2 Features
 
-Assume C<basic.csv> contains.
+=head3 Auto-parse CSV line
+
+When you read from the tied handle, the next line from your CSV is parsed and
+returned as a data structure ready for access. In the example below C<$csv_line>
+is a hash reference with the column names for keys and the values being the
+corresponding data from the second line of the file.
+
+   my $csv_fh = Tie::Handle::CSV->new('foo.csv', header => 1);
+   my $csv_line = <$csv_fh>;
+   print $csv_line->{'Id'};
+
+In the above example C<$csv_line> is a hash reference because the tied handle
+was declared as having a header. If the CSV file does not have a header the line
+is parsed and returned as an array reference:
+
+   my $csv_fh = Tie::Handle::CSV->new('bar.csv', header => 0);
+   my $csv_line = <$csv_fh>;
+   print $csv->[0];
+
+=head3 Auto-stringify to CSV format
+
+When you use the C<$csv_line> in a string context it is automatically
+reconstituted as a CSV line.
+
+   print $csv_line, "\n";  ## prints "123,abc,xyz\n"
+
+=head1 EXAMPLES
+
+Assume C<basic.csv> contains:
 
    name,salary,job
    steve,20000,picker
    dee,19000,checker
 
-File handles can either be tied using the C<tie> builtin...
-
-   tie *CSV_FH, 'Tie::Handle::CSV', 'basic.csv', header => 1;
-
-or by constructing one with the C<new()> method.
+The following script uppercases the first letter of everyone's name, increases
+their salary by 5% and prints the modified CSV data to STDOUT.
 
    my $csv_fh = Tie::Handle::CSV->new('basic.csv', header => 1);
+   while (my $csv_line = <$csv_fh>)
+      {
+      $csv_line->{'name'} = ucfirst $csv_line->{'name'};
+      $csv_line->{'salary'} *= 1.05;
+      print $csv_line . "\n";
+      }
+   close $csv_fh;
 
-If either C<tie> or C<new> fail to C<open> the given file, they call
-C<Carp::croak> with the value "$!: $file". If you don't wish your program to
-fail when a file can't be opened, wrap your instantiation in an C<eval>.
+The converted output on STDOUT would appear as:
 
-   eval { tie *CSV_FH, 'Tie::Handle::CSV', 'basic.csv', header => 1 };
-   my $csv_fh = eval { Tie::Handle::CSV->new('basic.csv', header => 1) };
+   Steve,21000,picker
+   Dee,19950,checker
 
-Once you have successfully tied/instantiated a file, you can read from it as
-you normally would.
+=head1 METHODS
 
-   my $first_line = <$csv_fh>;
+=head2 new
 
-At this point, because the C<header =E<gt> 1> option was given, C<$first_line>
-is actually a hash reference, not a string.
+   my $csv_fh = Tie::Handle::CSV->new('basic.csv');
 
-   $first_line->{'salary'} *= 1.05;   ## cost of living increase
-   print "$first_line->{'name'} => $first_line->{'salary'}\n";
+The C<new> method returns a tied filehandle. The default options would make the
+above equivalent to:
 
-Despite the fact that C<$first_line> is a hash reference, printing it or any
-usage as a string, converts it back to CSV format.
+   my $csv_fh = Tie::Handle::CSV->new( file       => 'basic.csv',
+                                       header     => 1,
+                                       openmode   => undef,
+                                       csv_parser => Text::CSV_XS->new(),
+                                       sep_char   => undef,
+                                       stringify  => 1 );
 
-   print $first_line, "\n";           ## prints "steve,21000,picker\n"
+The options to C<new> are discussed in detail below.
 
-In the example above, the file has a header, allowing the lines to be treated
-as hash references. If it did not have a built in header, the lines could still
-be treated as hash references, by passing a list of header names as an argument
-to C<tie> or C<new> (see OPTIONS).
-
-If the file did not have a built in header, and no header was passed as an
-argument to C<tie> or C<new>, then lines are treated as array references.
-
-   $first_line->[1] *= 1.05;          ## cost of living increase
-
-Printing and string conversion still automatically result in CSV conversion as
-with a hash reference.
-
-=head1 OPTIONS
-
-If the number of arguments passed to C<tie> (after the C<Tie::Handle::CSV> name
-is given) or C<new> is an odd number, then the first argument is assumed to be
-the name of the CSV file. Any remaining arguments are treated as key-value
-options pairs.
-
-   tie *CSV_FH, 'Tie::Handle::CSV', 'basic.csv';
-
-   my $csv_fh = Tie::Handle::CSV->new( 'basic.csv', header => 1 );
-
-If the number of arguments is even, then all are considered to be key-value
-option pairs.
-
-   tie *CSV_FH, 'Tie::Handle::CSV', file => 'basic.csv', header => 1;
-
-   my $csv_fh = Tie::Handle::CSV->new( file => 'basic.csv' );
-
-The following option keys are recognized:
-
-=head2 C<file>
-
-This option specifies the path to the CSV file. If this option is given in
-conjunction with an odd number of arguments, the first argument takes
-precedence over this option.
-
-   ## same results
-   my $csv_fh = Tie::Handle::CSV->new( 'basic.csv' );
-   my $csv_fh = Tie::Handle::CSV->new( file => 'basic.csv' );
-
-=head2 C<header>
-
-This option indicates whether and how headers are to be used. If this option is
-true or non-existent, lines will be represented as hash references. If it is
-false, lines will be represented as array references.
-
-   ## no header
-   my $csv_fh = Tie::Handle::CSV->new( 'basic.csv', header => 0 );
-   ## print first field of first line
-   print +( scalar <$csv_fh> )->[0], "\n";
-
-If this option is true or non-existent, and not an array reference the first
-line of the file is read at the time of calling C<tie> or C<new> and used to
-define the hash reference keys.
-
-   ## header in file
-   my $csv_fh = Tie::Handle::CSV->new( 'basic.csv' );
-   ## print first field of first line
-   print +( scalar <$csv_fh> )->{'name'}, "\n";
-
-If the value for this option B<is> an array reference, the values in the array
-reference are used as the keys in the hash reference representing the line of
-data.
-
-   ## header passed as arg
-   my $csv_fh = Tie::Handle::CSV->new( 'basic.csv',
-                                        header => [qw/ name salary /] );
-   ## print first field of first line
-   print +( scalar <$csv_fh> )->{'name'}, "\n";
-
-=head2 C<openmode>
-
-If this option is defined, the value is used as the I<MODE> argument in the
-3-arg form of C<open>. Otherwise, the file is opened using 2-arg C<open>.
-
-   ## open in read-write mode
-   my $csv_fh = Tie::Handle::CSV->new( 'basic.csv', openmode => '+<' );
-
-=head2 C<csv_parser>
+=head3 C<csv_parser>
 
 Internally, L<Text::CSV_XS> is used to do CSV parsing and construction. By
 default the L<Text::CSV_XS> instance is instantiated with no arguments. If
@@ -314,7 +271,58 @@ the value to this option.
    my $csv_fh = Tie::Handle::CSV->new( 'basic.csv',
                                         csv_parser => $csv_parser );
 
-=head2 C<sep_char>
+=head3 C<file>
+
+This option specifies the path to the CSV file. As an alternative, the C<file>
+key can be omitted. When there are an odd number of arguments the first argument
+is taken to be the file name. If this option is given in conjunction with an odd
+number of arguments, the first argument takes precedence over this option.
+
+   ## same results
+   my $csv_fh = Tie::Handle::CSV->new( 'basic.csv' );
+   my $csv_fh = Tie::Handle::CSV->new( file => 'basic.csv' );
+
+=head3 C<header>
+
+This option controls whether headers are to be used. If it is false, lines will
+be represented as array references.
+
+   ## no header
+   my $csv_fh = Tie::Handle::CSV->new( 'no_header.csv', header => 0 );
+   ## print first field of first line
+   my $csv_line = <$csv_fh>;
+   print $csv_line->[0], "\n";
+
+If this option is true, and not an array reference the values from the first
+line of the file are used as the keys in the hash references returned from
+subsequent line reads.
+
+   ## header in file
+   my $csv_fh = Tie::Handle::CSV->new( 'header.csv' );
+   ## print 'name' value from first line
+   my $csv_line = <$csv_fh>;
+   print $csv_line->{'name'}, "\n";
+
+If the value for this option B<is> an array reference, the values in the array
+reference are used as the keys in the hash reference representing the line of
+data.
+
+   ## header passed as arg
+   my $csv_fh = Tie::Handle::CSV->new( 'basic.csv',
+                                        header => [qw/ name salary /] );
+   ## print 'name' value from first line
+   my $csv_line = <$csv_fh>;
+   print $csv_line->{'name'}, "\n";
+
+=head3 C<openmode>
+
+If this option is defined, the value is used as the I<MODE> argument in the
+3-arg form of C<open>. Otherwise, the file is opened using 2-arg C<open>.
+
+   ## open in read-write mode
+   my $csv_fh = Tie::Handle::CSV->new( 'basic.csv', openmode => '+<' );
+
+=head3 C<sep_char>
 
 Perhaps the most common reason for giving the C<csv_parser> option is to
 specify a non-comma separator character. For this reason, you can specify a
@@ -327,19 +335,63 @@ the internally created L<Text::CSV_XS> object.
 If you specify both the C<sep_char> and C<csv_parser> options, the C<sep_char>
 option is ignored.
 
+=head3 C<stringify>
+
+If the C<stringify> value is true then lines are returned as tied hash or array
+references that auto-stringify back to CSV format. When this option is false
+line reads return simple hash or array references. This is intended as an
+optimization for faster reads when you don't need to print the line. The default
+behavior is stringification.
+
 =head1 AUTHOR
 
-Daniel B. Boorstein, E<lt>danboo@cpan.orgE<gt>
+Daniel B. Boorstein, C<< <danboo at cpan.org> >>
 
 =head1 SEE ALSO
 
 L<Text::CSV_XS>
 
-=head1 COPYRIGHT AND LICENSE
+=head1 BUGS
 
-Copyright 2004 by Daniel B. Boorstein
+Please report any bugs or feature requests to
+C<bug-tie-handle-csv at rt.cpan.org>, or through the web interface at
+L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Tie-Handle-CSV>.
+I will be notified, and then you'll automatically be notified of progress on
+your bug as I make changes.
 
-This library is free software; you can redistribute it and/or modify it under
-the same terms as Perl itself.
+=head1 SUPPORT
+
+You can find documentation for this module with the perldoc command.
+
+    perldoc Tie::Handle::CSV
+
+You can also look for information at:
+
+=over 4
+
+=item * AnnoCPAN: Annotated CPAN documentation
+
+L<http://annocpan.org/dist/Tie-Handle-CSV>
+
+=item * CPAN Ratings
+
+L<http://cpanratings.perl.org/d/Tie-Handle-CSV>
+
+=item * RT: CPAN's request tracker
+
+L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Tie-Handle-CSV>
+
+=item * Search CPAN
+
+L<http://search.cpan.org/dist/Tie-Handle-CSV>
+
+=back
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2007 Daniel B. Boorstein, all rights reserved.
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
 
 =cut
