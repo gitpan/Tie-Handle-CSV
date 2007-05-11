@@ -31,13 +31,13 @@ use_ok('Tie::Handle::CSV');
 
 eval { tie(*FH, 'Tie::Handle::CSV', '', header => [qw/ one two three /]) };
 ok( $@, 'tie - bad - header' );
-ok( tie(*FH, 'Tie::Handle::CSV', $tmp_file, header => [qw/ one two three /]), 'tie - good - header' );
+ok( tie(*FH, 'Tie::Handle::CSV', $tmp_file, header => [qw/ one tWo three /], force_lower => 1), 'tie - good - header' );
 
 ## test new() interface
 
 my $csv_fh;
 
-ok(  $csv_fh = Tie::Handle::CSV->new($tmp_file, header => [qw/ one two three /]), 'new - good - header' );
+ok(  $csv_fh = Tie::Handle::CSV->new($tmp_file, header => [qw/ one two thRee /], force_lower => 1), 'new - good - header' );
 eval { Tie::Handle::CSV->new('', header => [qw/ one two three /]) };
 ok( $@, 'new - bad - header' );
 

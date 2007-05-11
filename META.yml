@@ -1,12 +1,24 @@
-# http://module-build.sourceforge.net/META-spec.html
-#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
-name:         Tie-Handle-CSV
-version:      0.06
-version_from: lib/Tie/Handle/CSV.pm
-installdirs:  site
-requires:
-    Test::More:                    0
-    Text::CSV_XS:                  0
-
-distribution_type: module
-generated_by: ExtUtils::MakeMaker version 6.17
+---
+name: Tie-Handle-CSV
+version: 0.07
+author:
+  - 'Daniel B. Boorstein <danboo@cpan.org>'
+abstract: easy access to CSV files
+license: perl
+resources:
+  license: http://dev.perl.org/licenses/
+build_requires:
+  Test::More: 0
+  Text::CSV_XS: 0
+provides:
+  Tie::Handle::CSV:
+    file: lib/Tie/Handle/CSV.pm
+    version: 0.07
+  Tie::Handle::CSV::Array:
+    file: lib/Tie/Handle/CSV/Array.pm
+  Tie::Handle::CSV::Hash:
+    file: lib/Tie/Handle/CSV/Hash.pm
+generated_by: Module::Build version 0.2806
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.2.html
+  version: 1.2

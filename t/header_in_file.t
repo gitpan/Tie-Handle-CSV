@@ -11,7 +11,7 @@ use File::Temp 'tempfile';
 my ($tmp_fh, $tmp_file) = tempfile( UNLINK => 1 );
 
 print $tmp_fh <<EOCSV;
-foo,bar,baz
+foo,Bar,BAZ
 potato,monkey,rutabaga
 fred,barney,wilma
 EOCSV
@@ -29,13 +29,13 @@ use_ok('Tie::Handle::CSV');
 
 eval { tie(*FH, 'Tie::Handle::CSV', '', header => 1) };
 ok( $@, 'tie - bad - header' );
-ok(  tie(*FH, 'Tie::Handle::CSV', $tmp_file, header => 1), 'tie - good - header' );
+ok(  tie(*FH, 'Tie::Handle::CSV', $tmp_file, header => 1, force_lower => 1), 'tie - good - header' );
 
 ## test new() interface
 
 my $csv_fh;
 
-ok(  $csv_fh = Tie::Handle::CSV->new($tmp_file, header => 1), 'new - good - header' );
+ok(  $csv_fh = Tie::Handle::CSV->new($tmp_file, header => 1, force_lower => 1), 'new - good - header' );
 eval { Tie::Handle::CSV->new('', header => 1) };
 ok( $@, 'new - bad - header' );
 

@@ -11,7 +11,7 @@ use Symbol;
 use Tie::Handle::CSV::Hash;
 use Tie::Handle::CSV::Array;
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 sub new
    {
@@ -38,11 +38,17 @@ sub TIEHANDLE
       %opts = @opts;
       }
 
-   ## use 3-arg open if 'openmode' is specified,
-   ## otherwise use 2-arg to work with STDIN via '-'
-   if ( defined $opts{'openmode'} )
+   ## support old 'openmode' option key
+   if ( exists $opts{'openmode'} && ! exists $opts{'open_mode'} )
       {
-      open( $csv_fh, $opts{'openmode'}, $opts{'file'} )
+      $opts{'open_mode'} = $opts{'openmode'};
+      }
+
+   ## use 3-arg open if 'open_mode' is specified,
+   ## otherwise use 2-arg to work with STDIN via '-'
+   if ( defined $opts{'open_mode'} )
+      {
+      open( $csv_fh, $opts{'open_mode'}, $opts{'file'} )
          || croak "$!: $opts{'file'}";
       }
    else
@@ -69,12 +75,25 @@ sub TIEHANDLE
 
    $opts{'header'} = 1 unless exists $opts{'header'};
 
-   if ( $opts{'header'} && ref $opts{'header'} ne 'ARRAY' )
+   if ( $opts{'header'} )
       {
-      my $header_line = <$csv_fh>;
-      $opts{'csv_parser'}->parse($header_line)
-         || croak $opts{'csv_parser'}->error_input();
-      $opts{'header'} = [ $opts{'csv_parser'}->fields() ];
+
+      if ( ref $opts{'header'} ne 'ARRAY' )
+         {
+         my $header_line = <$csv_fh>;
+         $opts{'csv_parser'}->parse($header_line)
+            || croak $opts{'csv_parser'}->error_input();
+         $opts{'header'} = [ $opts{'csv_parser'}->fields() ];
+         }
+
+      if ( $opts{'force_lower'} )
+         {
+         for my $header ( @{ $opts{'header'} } )
+            {
+            $header = lc $header;
+            }
+         }
+
       }
 
    return bless { handle => $csv_fh, opts => \%opts }, $class;
@@ -165,7 +184,7 @@ Tie::Handle::CSV - easy access to CSV files
 
 =head1 VERSION
 
-Version 0.06
+Version 0.07
 
 =head1 SYNOPSIS
 
@@ -250,12 +269,13 @@ The converted output on STDOUT would appear as:
 The C<new> method returns a tied filehandle. The default options would make the
 above equivalent to:
 
-   my $csv_fh = Tie::Handle::CSV->new( file       => 'basic.csv',
-                                       header     => 1,
-                                       openmode   => undef,
-                                       csv_parser => Text::CSV_XS->new(),
-                                       sep_char   => undef,
-                                       stringify  => 1 );
+   my $csv_fh = Tie::Handle::CSV->new( csv_parser  => Text::CSV_XS->new(),
+                                       file        => 'basic.csv',
+                                       force_lower => 0,
+                                       header      => 1,
+                                       open_mode   => undef,
+                                       sep_char    => undef,
+                                       stringify   => 1 );
 
 The options to C<new> are discussed in detail below.
 
@@ -281,6 +301,17 @@ number of arguments, the first argument takes precedence over this option.
    ## same results
    my $csv_fh = Tie::Handle::CSV->new( 'basic.csv' );
    my $csv_fh = Tie::Handle::CSV->new( file => 'basic.csv' );
+
+=head3 C<force_lower>
+
+When this option is true the keys in the hashes returned from line reads are
+forced to lowercase. The default value is false, and the keys are not modified
+from those in the header.
+
+   my $csv_fh = Tie::Handle::CSV->new( 'basic.csv', force_lower => 1 );
+   ## print 'Name' value from first line using 'name' key
+   my $csv_line = <$csv_fh>;
+   print $csv_line->{'name'}, "\n";
 
 =head3 C<header>
 
@@ -314,13 +345,13 @@ data.
    my $csv_line = <$csv_fh>;
    print $csv_line->{'name'}, "\n";
 
-=head3 C<openmode>
+=head3 C<open_mode>
 
 If this option is defined, the value is used as the I<MODE> argument in the
 3-arg form of C<open>. Otherwise, the file is opened using 2-arg C<open>.
 
    ## open in read-write mode
-   my $csv_fh = Tie::Handle::CSV->new( 'basic.csv', openmode => '+<' );
+   my $csv_fh = Tie::Handle::CSV->new( 'basic.csv', open_mode => '+<' );
 
 =head3 C<sep_char>
 

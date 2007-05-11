@@ -1,5 +1,11 @@
 Revision history for Perl extension Tie::Handle::CSV.
 
+0.07  Thu May 10 2007
+     - added 'force_lower' option for forcing header keys to lowercase in line
+       read hashes
+     - renamed 'openmode' option to 'open_mode' in docs and code, but retained
+       'openmode' as an alias
+
 0.06  Sun May 06 2007
      - added 'stringify' option to control whether line reads return objects
        that stringify to CSV format or just basic hash or array references
