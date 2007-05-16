@@ -53,14 +53,16 @@ sub CLEAR
 sub FIRSTKEY
    {
    my ($self) = @_;
-   () = keys %{ $self->{'data'} };
-   each %{ $self->{'data'} };
+   $self->{'keys'} = [ @{ $self->{'parent'}{'opts'}{'header'} } ];
+   return shift @{ $self->{'keys'} };
    }
 
 sub NEXTKEY
    {
    my ($self) = @_;
-   each %{ $self->{'data'} };
+   @{ $self->{'keys'} }
+      ? return shift @{ $self->{'keys'} }
+      : return;
    }
 
 sub _stringify

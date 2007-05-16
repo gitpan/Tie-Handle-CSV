@@ -11,7 +11,7 @@ use Symbol;
 use Tie::Handle::CSV::Hash;
 use Tie::Handle::CSV::Array;
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 sub new
    {
@@ -44,6 +44,12 @@ sub TIEHANDLE
       $opts{'open_mode'} = $opts{'openmode'};
       }
 
+   ## support old 'stringify' option key
+   if ( exists $opts{'stringify'} && ! exists $opts{'simple_reads'} )
+      {
+      $opts{'simple_reads'} = ! $opts{'stringify'};
+      }
+
    ## use 3-arg open if 'open_mode' is specified,
    ## otherwise use 2-arg to work with STDIN via '-'
    if ( defined $opts{'open_mode'} )
@@ -71,8 +77,6 @@ sub TIEHANDLE
          }
       }
 
-   $opts{'stringify'} = 1 unless exists $opts{'stringify'};
-
    $opts{'header'} = 1 unless exists $opts{'header'};
 
    if ( $opts{'header'} )
@@ -86,12 +90,30 @@ sub TIEHANDLE
          $opts{'header'} = [ $opts{'csv_parser'}->fields() ];
          }
 
-      if ( $opts{'force_lower'} )
+      ## support old 'force_lower' option key
+      if ( $opts{'force_lower'} && ! $opts{'key_case'} )
          {
-         for my $header ( @{ $opts{'header'} } )
+         $opts{'key_case'} = 'lower';
+         }
+
+      if ( $opts{'key_case'} )
+         {
+
+         if ( lc $opts{'key_case'} eq 'lower' )
             {
-            $header = lc $header;
+            for my $header ( @{ $opts{'header'} } )
+               {
+               $header = lc $header;
+               }
             }
+         elsif ( lc $opts{'key_case'} eq 'upper' )
+            {
+            for my $header ( @{ $opts{'header'} } )
+               {
+               $header = uc $header;
+               }
+            }
+
          }
 
       }
@@ -128,16 +150,16 @@ sub READLINE
             || croak $opts->{'csv_parser'}->error_input();
          if ( $opts->{'header'} )
             {
-            my $parsed_line = $opts->{'stringify'}
-               ? Tie::Handle::CSV::Hash->_new($self) : {};
+            my $parsed_line = $opts->{'simple_reads'}
+               ? {} : Tie::Handle::CSV::Hash->_new($self);
             @{ $parsed_line }{ @{ $opts->{'header'} } }
                = $opts->{'csv_parser'}->fields();
             return $parsed_line;
             }
          else
             {
-            my $parsed_line = $opts->{'stringify'}
-               ? Tie::Handle::CSV::Array->_new($self) : [];
+            my $parsed_line = $opts->{'simple_reads'}
+               ? [] : Tie::Handle::CSV::Array->_new($self);
             @{ $parsed_line } = $opts->{'csv_parser'}->fields();
             return $parsed_line;
             }
@@ -184,7 +206,7 @@ Tie::Handle::CSV - easy access to CSV files
 
 =head1 VERSION
 
-Version 0.07
+Version 0.08
 
 =head1 SYNOPSIS
 
@@ -269,13 +291,13 @@ The converted output on STDOUT would appear as:
 The C<new> method returns a tied filehandle. The default options would make the
 above equivalent to:
 
-   my $csv_fh = Tie::Handle::CSV->new( csv_parser  => Text::CSV_XS->new(),
-                                       file        => 'basic.csv',
-                                       force_lower => 0,
-                                       header      => 1,
-                                       open_mode   => undef,
-                                       sep_char    => undef,
-                                       stringify   => 1 );
+   my $csv_fh = Tie::Handle::CSV->new( csv_parser   => Text::CSV_XS->new(),
+                                       file         => 'basic.csv',
+                                       header       => 1,
+                                       key_case     => undef,
+                                       open_mode    => undef,
+                                       sep_char     => undef,
+                                       simple_reads => undef );
 
 The options to C<new> are discussed in detail below.
 
@@ -301,17 +323,6 @@ number of arguments, the first argument takes precedence over this option.
    ## same results
    my $csv_fh = Tie::Handle::CSV->new( 'basic.csv' );
    my $csv_fh = Tie::Handle::CSV->new( file => 'basic.csv' );
-
-=head3 C<force_lower>
-
-When this option is true the keys in the hashes returned from line reads are
-forced to lowercase. The default value is false, and the keys are not modified
-from those in the header.
-
-   my $csv_fh = Tie::Handle::CSV->new( 'basic.csv', force_lower => 1 );
-   ## print 'Name' value from first line using 'name' key
-   my $csv_line = <$csv_fh>;
-   print $csv_line->{'name'}, "\n";
 
 =head3 C<header>
 
@@ -345,6 +356,19 @@ data.
    my $csv_line = <$csv_fh>;
    print $csv_line->{'name'}, "\n";
 
+=head3 C<key_case>
+
+This option allows the user to specify the case used to represent the headers in
+hashes from line reads. By default the keys are exactly as the headers. If the
+value of this option is 'lower' the keys are forced to lowercase versions of the
+headers. If this option is 'upper' the keys are forced to uppercase versions of
+the headers.
+
+   my $csv_fh = Tie::Handle::CSV->new( 'basic.csv', key_case => 'lower' );
+   ## print 'Name' value from first line using 'name' key
+   my $csv_line = <$csv_fh>;
+   print $csv_line->{'name'}, "\n";
+
 =head3 C<open_mode>
 
 If this option is defined, the value is used as the I<MODE> argument in the
@@ -366,13 +390,15 @@ the internally created L<Text::CSV_XS> object.
 If you specify both the C<sep_char> and C<csv_parser> options, the C<sep_char>
 option is ignored.
 
-=head3 C<stringify>
+=head3 C<simple_reads>
 
-If the C<stringify> value is true then lines are returned as tied hash or array
-references that auto-stringify back to CSV format. When this option is false
-line reads return simple hash or array references. This is intended as an
-optimization for faster reads when you don't need to print the line. The default
-behavior is stringification.
+This option controls whether line reads return simple hash or array references.
+By default this option is false, resulting in tied hashes or arrays. The tied
+data structures auto-stringify back to CSV format, with the hashes also having
+keys ordered as the header list.
+
+When this option is true, line reads return simple hash or array references
+without the special tied behaviors, resulting in faster line reads.
 
 =head1 AUTHOR
 
