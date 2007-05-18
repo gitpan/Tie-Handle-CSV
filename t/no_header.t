@@ -39,7 +39,7 @@ my $csv_fh;
 
 eval { Tie::Handle::CSV->new('') };
 ok( $@,                  'new - bad  - no header' );
-ok( $csv_fh = Tie::Handle::CSV->new($tmp_file, header => 0), 'new - good - no header' );
+ok( $csv_fh = Tie::Handle::CSV->new($tmp_file, header => 0, simple_reads => 1), 'new - good - no header' );
 
 ## test reading with no header
 
@@ -75,11 +75,11 @@ $line2 = <$csv_fh>;
 $line3 = <$csv_fh>;
 $line4 = <$csv_fh>;
 
-ok( ref $line1 eq 'Tie::Handle::CSV::Array',              'new - ref' );
+ok( ref $line1 eq 'ARRAY',              'new - ref' );
 
-ok( $line1 eq 'foo,bar,baz',            'new - line1 - stringify' );
-ok( $line2 eq 'potato,monkey,rutabaga', 'new - line2 - stringify' );
-ok( $line3 eq 'fred,barney,wilma',      'new - line3 - stringify' );
+like( $line1, qr/ARRAY/,            'new - line1 - stringify' );
+like( $line2, qr/ARRAY/, 'new - line2 - stringify' );
+like( $line3, qr/ARRAY/,      'new - line3 - stringify' );
 ok(! defined $line4,                    'new - line4 - undef' );
 
 is( $line1->[0], 'foo', 'new - line1 - 0' );

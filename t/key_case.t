@@ -1,10 +1,8 @@
 use strict;
 use warnings;
 
-use Test::More tests => 53;
+use Test::More tests => 69;
 use File::Temp 'tempfile';
-
-
 
 ## create a temp CSV file
 
@@ -112,6 +110,7 @@ ok( close($csv_fh), 'new - close' );
 $csv_fh = Tie::Handle::CSV->new(
    file         => $tmp_file,
    key_case     => 'upper',
+   openmode     => '<',
    simple_reads => 1 );
 
 $line1 = <$csv_fh>;
@@ -136,5 +135,42 @@ is( $line2->{'Foo'}, undef,      'new - line2 - Foo' );
 @exp  = qw/ BAR BAZ FOO /;
 
 is_deeply(\@keys, \@exp, "new - keys");
+
+ok( close($csv_fh), 'new - close' );
+
+$csv_fh = Tie::Handle::CSV->new(
+   file         => $tmp_file,
+   open_mode    => '<',
+   key_case     => 'any' );
+
+$line1 = <$csv_fh>;
+$line2 = <$csv_fh>;
+$line3 = <$csv_fh>;
+
+is( $line1, 'potato,monkey,rutabaga', 'new - line1 - stringify' );
+is( $line2, 'fred,barney,wilma',      'new - line2 - stringify' );
+ok(! defined $line3,                    'new - line3 - undef' );
+
+is( $line1->{'FoO'}, 'potato',   'new - line1 - FOO' );
+is( $line1->{'BAr'}, 'monkey',   'new - line1 - BAR' );
+is( $line1->{'bAZ'}, 'rutabaga', 'new - line1 - BAZ' );
+is( $line1->{'not'}, undef,      'new - line1 - not' );
+
+is( $line2->{'fOO'}, 'fred',     'new - line2 - FOO' );
+is( $line2->{'bar'}, 'barney',   'new - line2 - BAR' );
+is( $line2->{'Baz'}, 'wilma',    'new - line2 - BAZ' );
+is( $line2->{'NoT'}, undef,      'new - line2 - not' );
+
+@keys = sort keys %{ $line1 };
+@exp  = qw/ Bar Baz Foo /;
+
+is_deeply(\@keys, \@exp, "new - keys");
+
+ok( exists $line2->{'baZ'},    'new - line2 - baz' );
+is( delete $line2->{'bAZ'}, 'wilma',    'new - line2 - baz' );
+
+%{ $line2 } = ();
+
+is( $line2->{'fOO'}, undef,     'new - line2 - FOO' );
 
 ok( close($csv_fh), 'new - close' );

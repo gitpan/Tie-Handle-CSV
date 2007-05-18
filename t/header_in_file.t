@@ -1,10 +1,9 @@
 use strict;
 use warnings;
 
-use Test::More tests => 31;
+use Test::More tests => 34;
 use File::Temp 'tempfile';
-
-
+use Text::CSV_XS;
 
 ## create a temp CSV file
 
@@ -27,15 +26,17 @@ use_ok('Tie::Handle::CSV');
 
 ## test tie interface
 
-eval { tie(*FH, 'Tie::Handle::CSV', '', header => 1) };
+eval { tie(*FH, 'Tie::Handle::CSV', '', header => 1, open_mode => '<') };
 ok( $@, 'tie - bad - header' );
-ok(  tie(*FH, 'Tie::Handle::CSV', $tmp_file, header => 1, force_lower => 1), 'tie - good - header' );
+eval { tie(*FH, 'Tie::Handle::CSV', $tmp_file, header => 1, csv_parser => []) };
+ok( $@, 'tie - bad - header' );
+ok(  tie(*FH, 'Tie::Handle::CSV', $tmp_file, header => 1, force_lower => 1, key_case => 'lower', csv_parser => Text::CSV_XS->new() ), 'tie - good - header' );
 
 ## test new() interface
 
 my $csv_fh;
 
-ok(  $csv_fh = Tie::Handle::CSV->new($tmp_file, header => 1, force_lower => 1), 'new - good - header' );
+ok(  $csv_fh = Tie::Handle::CSV->new($tmp_file, header => 1, force_lower => 1, openmode => '>>', open_mode => '<'), 'new - good - header' );
 eval { Tie::Handle::CSV->new('', header => 1) };
 ok( $@, 'new - bad - header' );
 
@@ -80,6 +81,9 @@ is( $line2->{'foo'}, 'fred',     'new - line2 - foo' );
 is( $line2->{'bar'}, 'barney',   'new - line2 - bar' );
 is( $line2->{'baz'}, 'wilma',    'new - line2 - baz' );
 is( $line2->{'not'}, undef,      'new - line2 - not' );
+
+ok( exists $line2->{'baz'},    'new - line2 - baz' );
+is( delete $line2->{'baz'}, 'wilma',    'new - line2 - baz' );
 
 ok( close(FH),      'tie - close' );
 ok( close($csv_fh), 'new - close' );

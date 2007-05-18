@@ -1,5 +1,10 @@
 Revision history for Perl extension Tie::Handle::CSV.
 
+0.09  Fri May 17 2007
+     - added support for 'key_case' => 'any' option (case-insensitive hash keys)
+     - setting an invalid 'csv_parser' is fatal
+     - testcover: 98.3%
+
 0.08  Tue May 15 2007
      - added 'key_case' option in-place of 'force_lower', currently supports
        'lower', 'upper' and default

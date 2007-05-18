@@ -4,6 +4,8 @@ use 5.006;
 use strict;
 use warnings;
 
+use Carp 'cluck';
+
 use overload '""' => \&_stringify, fallback => 1;
 
 sub _new
@@ -17,30 +19,36 @@ sub _new
 sub TIEHASH
    {
    my ($class, $parent) = @_;
-   return bless { data => {}, parent => $parent }, $class;
+   my $self = bless { data => {}, parent => $parent }, $class;
+   $self->{'lc'} = lc $parent->{'opts'}{'key_case'} eq 'any';
+   return $self;
    }
 
 sub STORE
    {
    my ($self, $key, $value) = @_;
+   $key = $self->{'lc'} ? lc $key : $key;
    $self->{'data'}{$key} = $value;
    }
 
 sub FETCH
    {
    my ($self, $key) = @_;
+   $key = $self->{'lc'} ? lc $key : $key;
    return $self->{'data'}{$key};
    }
 
 sub EXISTS
    {
    my ($self, $key) = @_;
+   $key = $self->{'lc'} ? lc $key : $key;
    exists $self->{'data'}{$key};
    }
 
 sub DELETE
    {
    my ($self, $key) = @_;
+   $key = $self->{'lc'} ? lc $key : $key;
    delete $self->{'data'}{$key};
    }
 
@@ -69,8 +77,12 @@ sub _stringify
    {
    my ($self) = @_;
    my $under_tie = tied %$self;
-   my @values = @{ $under_tie->{'data'} }
-      { @{ $under_tie->{'parent'}{'opts'}{'header'} } };
+   my @keys   = @{ $under_tie->{'parent'}{'opts'}{'header'} };
+   if ($under_tie->{'lc'})
+      {
+      @keys = map lc, @keys;
+      }
+   my @values = @{ $under_tie->{'data'} }{ @keys };
    $under_tie->{'parent'}{'opts'}{'csv_parser'}->combine(@values)
       || croak $under_tie->{'parent'}{'opts'}{'csv_parser'}->error_input();
    return $under_tie->{'parent'}{'opts'}{'csv_parser'}->string();

@@ -11,7 +11,7 @@ use Symbol;
 use Tie::Handle::CSV::Hash;
 use Tie::Handle::CSV::Array;
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 
 sub new
    {
@@ -64,17 +64,21 @@ sub TIEHANDLE
 
    ## establish the csv object
    ## use given sep_char when possible
-   if ( ref $opts{'csv_parser'} ne 'Text::CSV_XS' )
+   if ( $opts{'csv_parser'} )
       {
-      if (defined $opts{'sep_char'})
+      if ( ref $opts{'csv_parser'} ne 'Text::CSV_XS' )
          {
-         $opts{'csv_parser'} =
-            Text::CSV_XS->new( { sep_char => $opts{'sep_char'} } );
+         confess "'csv_parser' is not an instance of 'Text::CSV_XS'";
          }
-      else
-         {
-         $opts{'csv_parser'} = Text::CSV_XS->new();
-         }
+      }
+   elsif ( defined $opts{'sep_char'} )
+      {
+      $opts{'csv_parser'} =
+         Text::CSV_XS->new( { sep_char => $opts{'sep_char'} } );
+      }
+   else
+      {
+      $opts{'csv_parser'} = Text::CSV_XS->new();
       }
 
    $opts{'header'} = 1 unless exists $opts{'header'};
@@ -206,7 +210,7 @@ Tie::Handle::CSV - easy access to CSV files
 
 =head1 VERSION
 
-Version 0.08
+Version 0.09
 
 =head1 SYNOPSIS
 
@@ -368,6 +372,13 @@ the headers.
    ## print 'Name' value from first line using 'name' key
    my $csv_line = <$csv_fh>;
    print $csv_line->{'name'}, "\n";
+
+For case-insensitive hash keys use the 'key_case' value of 'any'.
+
+   my $csv_fh = Tie::Handle::CSV->new( 'basic.csv', key_case => 'any' );
+   ## print 'Name' value from first line
+   my $csv_line = <$csv_fh>;
+   print $csv_line->{'nAMe'}, "\n";
 
 =head3 C<open_mode>
 
