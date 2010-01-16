@@ -11,18 +11,28 @@ use Symbol;
 use Tie::Handle::CSV::Hash;
 use Tie::Handle::CSV::Array;
 
-our $VERSION = '0.09';
+our $VERSION = '0.10';
 
 sub new
    {
-   my $self = gensym();
-   return tie(*{ $self }, shift @_, @_) ? $self : ();
+   my $class = shift;
+   my $self  = bless gensym(), $class;
+   tie *$self, $self;
+   $self->_open(@_);
+   return $self;
    }
-
+   
 sub TIEHANDLE
    {
-   my ($class, @opts) = @_;
+   return $_[0] if ref $_[0];
+   my $class = shift;
+   return $class->new(@_);
+   }
 
+sub _open
+   {
+   my ($self, @opts) = @_;
+   
    my ($file, %opts, $csv_fh);
 
    ## if an odd number of options are given,
@@ -94,6 +104,8 @@ sub TIEHANDLE
          $opts{'header'} = [ $opts{'csv_parser'}->fields() ];
          }
 
+      $opts{'orig_header'} = [ @{ $opts{'header'} } ];
+
       ## support old 'force_lower' option key
       if ( $opts{'force_lower'} && ! $opts{'key_case'} )
          {
@@ -121,16 +133,16 @@ sub TIEHANDLE
          }
 
       }
-
-   return bless { handle => $csv_fh, opts => \%opts }, $class;
-
+      
+   *$self->{handle} = $csv_fh;
+   *$self->{opts}   = \%opts;
    }
 
 sub READLINE
    {
    my ($self) = @_;
-
-   my $opts = $self->{'opts'};
+   
+   my $opts = *$self->{'opts'};
 
    if (wantarray)
       {
@@ -147,7 +159,7 @@ sub READLINE
       }
    else
       {
-      my $csv_line = readline($self->{'handle'});
+      my $csv_line = readline(*$self->{'handle'});
       if (defined $csv_line)
          {
          $opts->{'csv_parser'}->parse($csv_line)
@@ -178,26 +190,43 @@ sub READLINE
 sub CLOSE
    {
    my ($self) = @_;
-   return close $self->{'handle'};
+   return close *$self->{'handle'};
    }
 
 sub PRINT
    {
    my ($self, @list) = @_;
-   my $handle = $self->{'handle'};
+   my $handle = *$self->{'handle'};
    return print $handle @list;
    }
 
 sub SEEK
    {
    my ($self, $position, $whence) = @_;
-   return seek $self->{'handle'}, $position, $whence;
+   return seek *$self->{'handle'}, $position, $whence;
    }
 
 sub TELL
    {
    my ($self) = @_;
-   return tell $self->{'handle'};
+   return tell *$self->{'handle'};
+   }
+   
+sub header
+   {
+   my ($self) = @_;
+   my $opts   = *$self->{opts};
+   my $header = $opts->{orig_header};
+   my $parser = $opts->{csv_parser};
+   
+   if ( ! $header || ref $header ne 'ARRAY' )
+      {
+      croak "handle does not contain a header";
+      }
+
+   $parser->combine(@{$header})
+      || croak $parser->error_input();
+   return $parser->string();   
    }
 
 1;
@@ -210,7 +239,7 @@ Tie::Handle::CSV - easy access to CSV files
 
 =head1 VERSION
 
-Version 0.09
+Version 0.10
 
 =head1 SYNOPSIS
 
@@ -220,6 +249,8 @@ Version 0.09
    use Tie::Handle::CSV;
 
    my $csv_fh = Tie::Handle::CSV->new('basic.csv', header => 1);
+   
+   print $csv_fh->header, "\n";
 
    while (my $csv_line = <$csv_fh>)
       {
@@ -410,6 +441,14 @@ keys ordered as the header list.
 
 When this option is true, line reads return simple hash or array references
 without the special tied behaviors, resulting in faster line reads.
+
+=head2 header
+
+   print $csv_fh->header, "\n";
+   
+The C<header> method returns a CSV formatted header string, for objects that
+have a header. It throws a fatal exception if invoked on an object that does
+not have a header.
 
 =head1 AUTHOR
 
