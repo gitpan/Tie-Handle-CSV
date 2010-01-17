@@ -1,6 +1,6 @@
 ---
 name: Tie-Handle-CSV
-version: 0.10
+version: 0.11
 author:
   - 'Daniel B. Boorstein <danboo@cpan.org>'
 abstract: easy access to CSV files
@@ -16,7 +16,7 @@ configure_requires:
 provides:
   Tie::Handle::CSV:
     file: lib/Tie/Handle/CSV.pm
-    version: 0.10
+    version: 0.11
   Tie::Handle::CSV::Array:
     file: lib/Tie/Handle/CSV/Array.pm
   Tie::Handle::CSV::Hash:
