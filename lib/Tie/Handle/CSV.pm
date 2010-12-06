@@ -12,7 +12,7 @@ use Text::CSV_XS;
 use Tie::Handle::CSV::Hash;
 use Tie::Handle::CSV::Array;
 
-our $VERSION = '0.12';
+our $VERSION = '0.13';
 
 sub new
    {
@@ -96,11 +96,11 @@ sub _open
    elsif ( defined $opts{'sep_char'} )
       {
       $opts{'csv_parser'} =
-         Text::CSV_XS->new( { sep_char => $opts{'sep_char'} } );
+         Text::CSV_XS->new( { sep_char => $opts{'sep_char'}, binary => 1 } );
       }
    else
       {
-      $opts{'csv_parser'} = Text::CSV_XS->new();
+      $opts{'csv_parser'} = Text::CSV_XS->new( { binary => 1 } );
       }
 
    $opts{'header'} = 1 unless exists $opts{'header'};
@@ -171,24 +171,22 @@ sub READLINE
       }
    else
       {
-      my $csv_line = readline(*$self->{'handle'});
-      if (defined $csv_line)
+      my $cols = $opts->{'csv_parser'}->getline(*$self->{'handle'});
+      if (defined $cols)
          {
-         $opts->{'csv_parser'}->parse($csv_line)
-            || croak $opts->{'csv_parser'}->error_input();
          if ( $opts->{'header'} )
             {
             my $parsed_line = $opts->{'simple_reads'}
                ? {} : Tie::Handle::CSV::Hash->_new($self);
             @{ $parsed_line }{ @{ $opts->{'header'} } }
-               = $opts->{'csv_parser'}->fields();
+               = @{ $cols };
             return $parsed_line;
             }
          else
             {
             my $parsed_line = $opts->{'simple_reads'}
                ? [] : Tie::Handle::CSV::Array->_new($self);
-            @{ $parsed_line } = $opts->{'csv_parser'}->fields();
+            @{ $parsed_line } = @{ $cols };
             return $parsed_line;
             }
          }
