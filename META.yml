@@ -6,8 +6,9 @@ build_requires:
   Test::More: 0
   Text::CSV_XS: 0
 configure_requires:
-  Module::Build: 0.36
-generated_by: 'Module::Build version 0.3603'
+  Module::Build: 0.38
+dynamic_config: 1
+generated_by: 'Module::Build version 0.38, CPAN::Meta::Converter version 2.113640'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -16,12 +17,14 @@ name: Tie-Handle-CSV
 provides:
   Tie::Handle::CSV:
     file: lib/Tie/Handle/CSV.pm
-    version: 0.13
+    version: 0.14
   Tie::Handle::CSV::Array:
     file: lib/Tie/Handle/CSV/Array.pm
+    version: 0
   Tie::Handle::CSV::Hash:
     file: lib/Tie/Handle/CSV/Hash.pm
+    version: 0
 resources:
   license: http://dev.perl.org/licenses/
   repository: http://github.com/danboo/perl-tie-handle-csv/
-version: 0.13
+version: 0.14
