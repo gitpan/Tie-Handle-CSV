@@ -1,30 +1,25 @@
 ---
-abstract: 'easy access to CSV files'
+name: Tie-Handle-CSV
+version: 0.15
 author:
   - 'Daniel B. Boorstein <danboo@cpan.org>'
-build_requires:
-  Test::More: 0
-  Text::CSV_XS: 0
-configure_requires:
-  Module::Build: 0.38
-dynamic_config: 1
-generated_by: 'Module::Build version 0.38, CPAN::Meta::Converter version 2.113640'
+abstract: easy access to CSV files
 license: perl
-meta-spec:
-  url: http://module-build.sourceforge.net/META-spec-v1.4.html
-  version: 1.4
-name: Tie-Handle-CSV
-provides:
-  Tie::Handle::CSV:
-    file: lib/Tie/Handle/CSV.pm
-    version: 0.14
-  Tie::Handle::CSV::Array:
-    file: lib/Tie/Handle/CSV/Array.pm
-    version: 0
-  Tie::Handle::CSV::Hash:
-    file: lib/Tie/Handle/CSV/Hash.pm
-    version: 0
 resources:
   license: http://dev.perl.org/licenses/
   repository: http://github.com/danboo/perl-tie-handle-csv/
-version: 0.14
+build_requires:
+  Test::More: 0
+  Text::CSV_XS: 0
+provides:
+  Tie::Handle::CSV:
+    file: lib/Tie/Handle/CSV.pm
+    version: 0.15
+  Tie::Handle::CSV::Array:
+    file: lib/Tie/Handle/CSV/Array.pm
+  Tie::Handle::CSV::Hash:
+    file: lib/Tie/Handle/CSV/Hash.pm
+generated_by: Module::Build version 0.280802
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.2.html
+  version: 1.2
